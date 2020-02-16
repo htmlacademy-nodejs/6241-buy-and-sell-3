@@ -8,13 +8,33 @@ const {
   ExitCode,
   FILE_NAME,
   DEFAULT_COUNT,
-  CATEGORIES,
-  SENTENCES,
-  TITLES,
   MAX_DATA_NUMBER,
 } = require(`../../constants`);
+const {
+  titles: TITLES,
+  categories: CATEGORIES,
+  sentences: SENTENCES
+} = require(`../../constants/data.json`);
 
 const getPictureFileName = (count) => `item${count}.jpg`;
+
+const getCategoriesNames = (library, number) => {
+  const arr = (new Array(number)).fill(undefined);
+  const maximum = library.length - 1;
+
+  const getCategoryName = () => {
+    const newItem = library[getRandomInt(0, maximum)];
+    if (arr.includes(newItem)) {
+      return getCategoryName();
+    }
+    return newItem;
+  };
+
+  arr.forEach((cur, index) => {
+    arr[index] = getCategoryName();
+  });
+  return arr;
+};
 
 const generateOffers = (count) => (
   Array(count).fill({}).map(() => ({
@@ -23,7 +43,7 @@ const generateOffers = (count) => (
     description: shuffle(SENTENCES).slice(1, 5).join(` `),
     type: Object.keys(OfferType)[Math.floor(Math.random() * Object.keys(OfferType).length)],
     sum: getRandomInt(SumRestrict.min, SumRestrict.max),
-    category: [CATEGORIES[getRandomInt(0, CATEGORIES.length - 1)]],
+    category: getCategoriesNames(CATEGORIES, getRandomInt(1, CATEGORIES.length)),
   }))
 );
 
