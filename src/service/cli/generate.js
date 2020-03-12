@@ -9,25 +9,33 @@ const {
   PictureRestrict,
   ExitCode,
   FILE_NAME,
+  FILE_SENTENCES_PATH,
+  FILE_TITLES_PATH,
+  FILE_CATEGORIES_PATH,
   DEFAULT_COUNT,
   MAX_DATA_NUMBER,
 } = require(`../../constants`);
-const {
-  titles: TITLES,
-  categories: CATEGORIES,
-  sentences: SENTENCES
-} = require(`../../constants/data.json`);
 
 const getPictureFileName = (count) => `item${count}.jpg`;
 
-const generateOffers = (count) => (
+const readContent = async (filePath) => {
+  try {
+    const content = await fs.readFile(filePath, `utf8`);
+    return content.split(`\n`).filter(Boolean);
+  } catch (err) {
+    console.error(chalk.red(err));
+    return [];
+  }
+};
+
+const generateOffers = (count, titles, categories, sentences) => (
   Array(count).fill({}).map(() => ({
-    title: TITLES[getRandomInt(0, TITLES.length - 1)],
+    title: titles[getRandomInt(0, titles.length - 1)],
     picture: getPictureFileName(getRandomInt(PictureRestrict.min, PictureRestrict.max)),
-    description: shuffle(SENTENCES).slice(0, 5).join(` `),
+    description: shuffle(sentences).slice(0, 5).join(` `),
     type: Object.keys(OfferType)[Math.floor(Math.random() * Object.keys(OfferType).length)],
     sum: getRandomInt(SumRestrict.min, SumRestrict.max),
-    category: shuffle(CATEGORIES).slice(0, getRandomInt(1, CATEGORIES.length - 1)),
+    category: shuffle(categories).slice(0, getRandomInt(1, categories.length - 1)),
   }))
 );
 
@@ -41,8 +49,11 @@ module.exports = {
       process.exit(ExitCode.error);
     }
 
-    const content = JSON.stringify(generateOffers(countOffer));
+    const titles = await readContent(FILE_TITLES_PATH);
+    const categories = await readContent(FILE_CATEGORIES_PATH);
+    const sentences = await readContent(FILE_SENTENCES_PATH);
 
+    const content = JSON.stringify(generateOffers(countOffer, titles, categories, sentences));
     try {
       await fs.writeFile(FILE_NAME, content);
       console.info(chalk.green(`Operation success. File created.`));

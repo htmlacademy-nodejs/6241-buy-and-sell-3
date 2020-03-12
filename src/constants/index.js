@@ -6,6 +6,12 @@ const DEFAULT_COUNT = 1;
 
 const FILE_NAME = `mocks.json`;
 
+const FILE_SENTENCES_PATH = `./data/sentences.txt`;
+
+const FILE_TITLES_PATH = `./data/titles.txt`;
+
+const FILE_CATEGORIES_PATH = `./data/categories.txt`;
+
 const USER_ARGV_INDEX = 2;
 
 const MAX_DATA_NUMBER = 1000;
@@ -35,6 +41,9 @@ module.exports = {
   DEFAULT_COMMAND,
   DEFAULT_COUNT,
   FILE_NAME,
+  FILE_SENTENCES_PATH,
+  FILE_TITLES_PATH,
+  FILE_CATEGORIES_PATH,
   USER_ARGV_INDEX,
   MAX_DATA_NUMBER,
   ExitCode,
