@@ -33,7 +33,7 @@ const onClientConnect = async (req, res) => {
         const message = mocks.map((post) => `<li>${post.title}</li>`).join(` `);
         sendResponse(res, HttpCode.OK, `<ul>${message}</ul>`);
       } catch (err) {
-        sendResponse(res, HttpCode.NOT_FOUND, notFoundMessage);
+        sendResponse(res, HttpCode.INTERNAL_SERVER_ERROR, notFoundMessage);
       }
       break;
     default:
