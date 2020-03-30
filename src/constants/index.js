@@ -8,6 +8,8 @@ const DEFAULT_PORT = 3000;
 
 const DEFAULT_SERVER_PORT = 8080;
 
+const PUBLIC_DIR = `public`;
+
 const FILE_NAME = `mocks.json`;
 
 const FILE_SENTENCES_PATH = `./data/sentences.txt`;
@@ -54,6 +56,7 @@ module.exports = {
   DEFAULT_COUNT,
   DEFAULT_PORT,
   DEFAULT_SERVER_PORT,
+  PUBLIC_DIR,
   FILE_NAME,
   FILE_SENTENCES_PATH,
   FILE_TITLES_PATH,
