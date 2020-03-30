@@ -21,7 +21,7 @@ const getPictureFileName = (count) => `item${count}.jpg`;
 const readContent = async (filePath) => {
   try {
     const content = await fs.readFile(filePath, `utf8`);
-    return content.split(`\n`).filter(Boolean);
+    return content.trim().split(`\n`).map((el) => el.trim()).filter(Boolean);
   } catch (err) {
     console.error(chalk.red(err));
     return [];
