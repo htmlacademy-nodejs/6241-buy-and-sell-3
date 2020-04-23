@@ -1,8 +1,15 @@
 'use strict';
 const {nanoid} = require(`nanoid`);
-const {OfferType, HttpCode} = require(`../../../constants`);
-
+const {HttpCode} = require(`../../../constants`);
 const {Router} = require(`express`);
+const {
+  offerValidation,
+  offerIdValidation,
+  commentValidation,
+  deleteCommentValidation,
+  searchQueryValidation,
+} = require(`../validation`);
+const {getExistedOfferId, getExistedOffer, checkOfferExist} = require(`../util`);
 const apiRouter = new Router();
 
 apiRouter
@@ -22,30 +29,26 @@ function getOffers(req, res) {
 }
 
 function createOffers(req, res) {
+  const error = offerValidation(req);
+
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
+    return;
+  }
+
   const {title, picture, description, type, sum, category} = req.body;
-
-  if (!title || !description || !sum || !category || !description) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, fill all the required fields`);
-    return;
-  }
-
-  if (!Object.keys(OfferType).includes(type)) {
-    res.status(HttpCode.BAD_REQUEST).send(`Wrong type`);
-    return;
-  }
-
   req.app.locals.data.push({id: nanoid(6), title, picture, description, type, sum, category});
   res.sendStatus(HttpCode.OK_CREATED);
 }
 
 function getOffer(req, res) {
-  const {offerId} = req.params;
-  if (!offerId) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id`);
+  const error = offerIdValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
-
-  const offer = req.app.locals.data.find((item) => item.id === offerId);
+  const {offerId} = req.params;
+  const offer = getExistedOffer(req.app.locals.data, offerId);
   if (offer) {
     res.send(offer);
   } else {
@@ -54,18 +57,18 @@ function getOffer(req, res) {
 }
 
 function updateOffer(req, res) {
-  const {offerId} = req.params;
-  if (!offerId) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id`);
+  const error = offerIdValidation(req) || offerValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
 
-  const existOfferId = req.app.locals.data.findIndex((item) => item.id === offerId);
+  const {offerId} = req.params;
+  const existOfferId = getExistedOfferId(req.app.locals.data, offerId);
   if (existOfferId === -1) {
     res.status(404).send(`Offer not found`);
     return;
   }
-
   const {title, picture, description, type, sum, category} = req.body;
   req.app.locals.data[existOfferId] = {
     ...req.app.locals.data[existOfferId],
@@ -80,13 +83,14 @@ function updateOffer(req, res) {
 }
 
 function deleteOrder(req, res) {
-  const {offerId} = req.params;
-  if (!offerId) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id`);
+  const error = offerIdValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
 
-  const isOfferExist = req.app.locals.data.some((item) => item.id === offerId);
+  const {offerId} = req.params;
+  const isOfferExist = checkOfferExist(req.app.locals.data, offerId);
   if (isOfferExist) {
     req.app.locals.data = req.app.locals.data.filter((item) => item.id !== offerId);
     res.sendStatus(HttpCode.OK_NO_CONTENT);
@@ -96,13 +100,14 @@ function deleteOrder(req, res) {
 }
 
 function getOrderComments(req, res) {
-  const {offerId} = req.params;
-  if (!offerId) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id`);
+  const error = offerIdValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
 
-  const offer = req.app.locals.data.find((item) => item.id === offerId);
+  const {offerId} = req.params;
+  const offer = getExistedOffer(req.app.locals.data, offerId);
   if (offer) {
     res.send(offer.comments || []);
   } else {
@@ -111,37 +116,34 @@ function getOrderComments(req, res) {
 }
 
 function createOrderComment(req, res) {
-  const {offerId} = req.params;
-  if (!offerId) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id`);
+  const error = offerIdValidation(req) || commentValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
 
-  const existOfferId = req.app.locals.data.findIndex((item) => item.id === offerId);
-
+  const {offerId} = req.params;
+  const existOfferId = getExistedOfferId(req.app.locals.data, offerId);
   if (existOfferId === -1) {
     res.status(HttpCode.NOT_FOUND).send(`Offer not found`);
   } else {
     const {text} = req.body;
-    if (text) {
-      const {comments = []} = req.app.locals.data[existOfferId];
-      comments.push({id: nanoid(6), text});
-      req.app.locals.data[existOfferId].comments = comments;
-      res.send(HttpCode.OK_CREATED);
-    } else {
-      res.status(HttpCode.BAD_REQUEST).send(`Need the text of a comment.`);
-    }
+    const {comments = []} = req.app.locals.data[existOfferId];
+    comments.push({id: nanoid(6), text});
+    req.app.locals.data[existOfferId].comments = comments;
+    res.send(HttpCode.OK_CREATED);
   }
 }
 
 function deleteOrderComment(req, res) {
-  const {offerId, commentId} = req.params;
-  if (!(offerId && commentId)) {
-    res.status(HttpCode.BAD_REQUEST).send(`Please, give offer Id and comment Id`);
+  const error = deleteCommentValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
     return;
   }
 
-  const existOfferId = req.app.locals.data.findIndex((item) => item.id === offerId);
+  const {offerId, commentId} = req.params;
+  const existOfferId = getExistedOfferId(req.app.locals.data, offerId);
   if (existOfferId === -1) {
     res.status(HttpCode.NOT_FOUND).send(`Offer not found`);
   } else {
@@ -165,12 +167,13 @@ function getCategories(req, res) {
 }
 
 function findOffers(req, res) {
-  const {query = ``} = req.query;
-  if (query.length === 0) {
-    res.status(HttpCode.BAD_REQUEST).send(`Need a search query`);
-  } else {
-    res.send(req.app.locals.data.filter((item) => item.title.includes(query)));
+  const error = searchQueryValidation(req);
+  if (error) {
+    res.status(HttpCode.BAD_REQUEST).send(error);
+    return;
   }
+  const {query} = req.query;
+  res.send(req.app.locals.data.filter((item) => item.title.includes(query)));
 }
 
 module.exports = apiRouter;
